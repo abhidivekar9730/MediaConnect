@@ -1,4 +1,4 @@
-import Post from "../model/PostModel.js";
+import Post from "../model/postModel.js";
 import User from "../model/userModel.js";
 import { getUserIdFromHeader } from "../helper/getUserId.js";
 
