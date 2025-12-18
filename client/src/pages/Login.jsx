@@ -1,24 +1,18 @@
+import { useState, useContext } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
-import { useContext, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
   const submit = async (e) => {
     e.preventDefault();
-
     try {
-      const res = await api.post("/auth/login", {
-        username,
-        password
-      });
-
+      const res = await api.post("/auth/login", { username, password });
       login(res.data);
       navigate("/");
     } catch (err) {
@@ -27,67 +21,39 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600">
-      
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-600">
       <form
         onSubmit={submit}
-        className="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl space-y-6"
+        className="bg-white p-8 rounded-xl w-96 space-y-5 shadow-xl"
       >
-        <h2 className="text-3xl font-bold text-center text-gray-800">
-          Welcome Back 👋
-        </h2>
-        <p className="text-center text-gray-500">
-          Login to your MediaConnect account
-        </p>
+        <h2 className="text-2xl font-bold text-center">Login</h2>
 
-        {/* Username */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Username
-          </label>
-          <input
-            type="text"
-            placeholder="Enter username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-            required
-          />
-        </div>
+        <input
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
 
-        {/* Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            type="password"
-            placeholder="Enter password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-            required
-          />
-        </div>
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
 
-        {/* Button */}
-        <button
-          type="submit"
-          className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition duration-300"
-        >
+        <button className="w-full bg-indigo-600 text-white py-2 rounded">
           Login
         </button>
-        <button
-          type="submit"
-          className="w-full py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition duration-300"
-        >
-          Rgister
-        </button>
 
-
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500">
-          © 2025 MediaConnect
+        <p className="text-center text-sm">
+          No account?{" "}
+          <Link to="/register" className="text-indigo-600">
+            Register
+          </Link>
         </p>
       </form>
     </div>

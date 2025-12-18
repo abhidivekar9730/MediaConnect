@@ -1,105 +1,125 @@
+import Post from "../model/PostModel.js";
+import User from "../model/userModel.js";
+import { getUserIdFromHeader } from "../helper/getUserId.js";
 
-
-import { get } from 'mongoose';
-import Post from '../model/PostModel.js';
-import User from '../model/userModel.js';
-import { getUserIdFromHeader } from '../helper/getUserId.js';
-
-// Create a new post
+// CREATE POST
 export const createPost = async (req, res) => {
   try {
     const userId = getUserIdFromHeader(req);
     let { media, caption } = req.body;
-    // Ensure media is an array and not empty
+
     if (!Array.isArray(media)) {
       media = media ? [media] : [];
     }
+
     if (!media.length) {
-      return res.status(400).json({ message: 'At least one media item is required.' });
+      return res.status(400).json({ message: "At least one media item is required" });
     }
-    const post = new Post({ media, caption, createdBy: userId });
+
+    const post = new Post({
+      media,
+      caption,
+      createdBy: userId,
+    });
+
     await post.save();
-    // Optionally add post to user's posts array
-    if (userId) {
-      await User.findByIdAndUpdate(userId, { $push: { posts: post._id } });
-    }
+
+    await User.findByIdAndUpdate(userId, {
+      $push: { posts: post._id },
+    });
+
     res.status(201).json(post);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get all posts
+// ✅ GET ALL POSTS (WITH USER INFO)
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find();
+    const posts = await Post.find({ isDeleted: false })
+      .populate("createdBy", "username email")
+      .sort({ createdAt: -1 });
+
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Get post by ID
+// GET POST BY ID
 export const getPostById = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    const post = await Post.findById(req.params.id)
+      .populate("createdBy", "username email");
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
     res.json(post);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Update post
+// UPDATE POST
 export const updatePost = async (req, res) => {
   try {
-    const post = await Post.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
     res.json(post);
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Delete post
+// DELETE POST
 export const deletePost = async (req, res) => {
   try {
     const post = await Post.findByIdAndDelete(req.params.id);
-    if (!post) return res.status(404).json({ message: 'Post not found' });
-    res.json({ message: 'Post deleted' });
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    res.json({ message: "Post deleted" });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Like post
+// LIKE / UNLIKE POST
 export const likePost = async (req, res) => {
   try {
     const userId = getUserIdFromHeader(req);
-    if (!userId) {
-      return res.status(401).json({ message: 'No token or user ID provided' });
-    }
     const post = await Post.findById(req.params.id);
-    if (!post) return res.status(404).json({ message: 'Post not found' });
-    post.likedBy = post.likedBy || [];
-    const alreadyLiked = post.likedBy.includes(userId);
-    if (alreadyLiked) {
-      // Unlike the post
-      post.likedBy = post.likedBy.filter(id => id.toString() !== userId);
-      post.likeCount = Math.max(0, post.likeCount - 1);
-      await post.save();
-      return res.json({ message: 'Post unliked', likeCount: post.likeCount });
-    } else {
-      // Like the post
-      post.likeCount += 1;
-      post.likedBy.push(userId);
-      await post.save();
-      return res.json({ message: 'Post liked', likeCount: post.likeCount });
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
     }
+
+    const alreadyLiked = post.likedBy.includes(userId);
+
+    if (alreadyLiked) {
+      post.likedBy = post.likedBy.filter(
+        (id) => id.toString() !== userId
+      );
+      post.likeCount -= 1;
+    } else {
+      post.likedBy.push(userId);
+      post.likeCount += 1;
+    }
+
+    await post.save();
+    res.json({ likeCount: post.likeCount });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
-
-
-
